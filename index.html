@@ -237,7 +237,7 @@ function ui(){
  us={kn:'uz',ms:'m/s',bft:'Bft'}[unit];
  const now=NOW(),[la,lo]=live&&!R.org?[NaN,NaN]:ll(bx,by),row=(a,b)=>'<span>'+a+'</span><span>'+b+'</span>',meas=st=='stay'&&still>15;
  $('gps').innerHTML=row('Datum a čas'+(live?'':' (simulace)'),ymd(now)+' '+hms(now))+row('Poloha (šířka, délka)',isNaN(la)?'–':la.toFixed(6)+'°, '+lo.toFixed(6)+'°')+row('Rychlost lodi (SOG)',(bsog*1.94384).toFixed(1)+' uz (práh 1,0 uz)')+row('Stav',meas?'Měřím stanoviště č. '+(stations.length+1)+' – '+buf.length+' vzorků':st=='stay'?'Ustaluji loď, čekám '+(16-still)+' s':'Přejezd – data se neukládají')+row('Uložených stanovišť',stations.length);
- const rs=$('rs'),nw=Date.now();rs.hidden=!live;if(live)rs.textContent='Senzor: '+R.conn+(R.bat!=null?' ('+R.bat+' %)':'')+' · GPS: '+(nw-R.tG<5000?'OK, přesnost ±'+Math.round(R.acc)+' m':R.gm||'čekám na signál')+' · Kompas: '+(nw-R.tA<3000?'OK':'bez dat – směr je vůči přídi')+(meas?' · MĚŘÍM':'')+(R.dg&&R.conn!='připojeno'?'\n'+R.dg:'');
+ const rs=$('rs'),nw=Date.now();rs.hidden=!live;if(live)rs.textContent='Senzor: '+R.conn+(R.bat!=null?' ('+R.bat+' %)':'')+' · GPS: '+(nw-R.tG<5000?'OK, přesnost ±'+Math.round(R.acc)+' m':R.gm||'čekám na signál')+' · Kompas: '+(nw-R.tA<3000?'OK':'bez dat – směr je vůči přídi')+(R.conn=='připojeno'?' · Frekvence dat: rychlost '+hz(R.fs).toFixed(1)+' Hz, směr '+hz(R.fd).toFixed(1)+' Hz':'')+(meas?' · MĚŘÍM':'')+(R.dg&&R.conn!='připojeno'?'\n'+R.dg:'');
  if(!$('t2').hidden)drawMap();const key=stations.length+unit;if(key!=lastKey){lastKey=key;table();refreshArchive()}
  const bs=$('bs');bs.textContent=running?'■ Ukončit měření ('+mm(Math.max(0,(NOW()-runT0)/1000))+')':'▶ Začít měření';bs.style.background=running?'var(--r)':'var(--a)'}
 function drawMap(){
@@ -297,11 +297,12 @@ function phase(){
  const row=(q,v)=>'<span>'+q+'</span><span>'+v+'</span>';
  M.innerHTML=row('Perioda cyklu',mm(P)+' min')+row('Amplituda','±'+A.toFixed(0)+'°')+row('Střed cyklu',Math.round(norm(base+c0))+'°')+row('Pravý extrém',dR+'°'+(stale?'':' · za '+mm(tR)))+row('Levý extrém',dL+'°'+(stale?'':' · za '+mm(tL)))+row('Fáze cyklu',Math.round(psi/T2*100)+' % (0 % = pravý extrém)')+row('Spolehlivost',Math.round(best*100)+' % (R² '+Math.round(Math.max(r2,0)*100)+' %)')+row('Délka měření',mm(n)+' min');
  phaseChart(cn,y,P,c0,A,w0,psi,stale,tR,tL)}
-const NOW=()=>live?Date.now():simT0+T*1000,R={conn:'odpojeno',lat:null,lon:null,acc:99,gsp:null,tG:0,tS:0,tD:0,tA:0,org:false,bat:null,gw:null,gm:'',dev:null,pl:null,al:0};
+const hz=a=>{const n=Date.now();while(a.length&&n-a[0]>10000)a.shift();return a.length<2?0:(a.length-1)/((a[a.length-1]-a[0])/1000)};
+const NOW=()=>live?Date.now():simT0+T*1000,R={fs:[],fd:[],conn:'odpojeno',lat:null,lon:null,acc:99,gsp:null,tG:0,tS:0,tD:0,tA:0,org:false,bat:null,gw:null,gm:'',dev:null,pl:null,al:0};
 async function link(){
  R.conn='připojuji…';const sv=await R.dev.gatt.connect(),es=await sv.getPrimaryService(0x181A),cs=await es.getCharacteristic(0x2A72),cd=await es.getCharacteristic(0x2A73);
- cs.addEventListener('characteristicvaluechanged',e=>{R.spd=e.target.value.getUint16(0,true)/100;R.tS=Date.now()});
- cd.addEventListener('characteristicvaluechanged',e=>{R.rel=e.target.value.getUint16(0,true)/100;R.tD=Date.now()});
+ cs.addEventListener('characteristicvaluechanged',e=>{R.spd=e.target.value.getUint16(0,true)/100;R.tS=Date.now();R.fs.push(R.tS)});
+ cd.addEventListener('characteristicvaluechanged',e=>{R.rel=e.target.value.getUint16(0,true)/100;R.tD=Date.now();R.fd.push(R.tD)});
  await cs.startNotifications();await cd.startNotifications();R.conn='připojeno';
  try{const bc=await (await sv.getPrimaryService(0x180F)).getCharacteristic(0x2A19);R.bat=(await bc.readValue()).getUint8(0);bc.addEventListener('characteristicvaluechanged',e=>{R.bat=e.target.value.getUint8(0)});await bc.startNotifications()}catch(e){}}
 async function retry(){
