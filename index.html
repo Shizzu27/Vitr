@@ -15,10 +15,10 @@ select{background:var(--card);color:var(--fg);border:1px solid var(--grid);borde
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;max-width:1100px}
 .card{background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--grid)}
 .card h2{font-size:13px;color:var(--mut);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.big{font-size:38px;font-weight:700;line-height:1}.big small{font-size:16px;color:var(--mut);font-weight:500}
+.big{font-size:clamp(26px,8vw,38px);font-weight:700;line-height:1}.big small{font-size:16px;color:var(--mut);font-weight:500}
 .live{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 canvas{width:100%;display:block}
-#cmp{width:190px;height:190px}#c2{height:190px}#c1,#c5{height:360px;max-width:560px;margin:0 auto}
+#lv{flex-wrap:nowrap;gap:10px}#lv>div{min-width:0}#cmp{width:min(190px,48%);height:auto;aspect-ratio:1/1;flex:0 0 auto}#c2{height:190px}#c1,#c5{height:360px;max-width:560px;margin:0 auto}
 .m{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}.m span:nth-child(odd){color:var(--mut)}.m span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .wide{grid-column:1/-1}
 .tag{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--a);color:#fff;font-weight:600;font-size:13px}
@@ -30,17 +30,14 @@ button{background:var(--a);color:#fff;border:0;border-radius:8px;padding:8px 14p
 input[type=text],input[type=date]{background:var(--card);color:var(--fg);border:1px solid var(--grid);border-radius:8px;padding:6px 8px;font-size:14px;width:150px}.plc{display:flex;gap:8px;align-items:center;margin-bottom:6px}.plc input{flex:1;width:auto}.plc span{color:var(--mut);font-size:12px;white-space:nowrap}
 #rs{background:var(--card);border:1px solid var(--grid);border-radius:8px;padding:8px 10px;color:var(--fg);font-size:13px;white-space:pre-line}
 </style></head><body>
-<h1>⛵ Vítr – prototyp <span class="tag" style="font-size:12px;vertical-align:middle;background:var(--mut)">verze 1.8 · 2. 10. 2026</span></h1>
+<h1>⛵ Vítr – prototyp <span class="tag" style="font-size:12px;vertical-align:middle;background:var(--mut)">verze 1.9 · 2. 10. 2026</span></h1>
 <div class="sub">Simulovaná data. Výstup senzoru se později napojí na funkci <code>addSample(rychlostMs, smerStupne)</code>.</div>
-<div class="tabs"><button class="tab on" data-t="t1">Analýza větru</button><button class="tab" data-t="t2">Stanoviště a mapa</button><button class="tab" data-t="t3">Archiv měření</button></div>
+<div class="tabs"><button class="tab on" data-t="t1">Analýza větru</button><button class="tab" data-t="t2">Stanoviště a mapa</button><button class="tab" data-t="t3">Archiv měření</button><button class="tab" data-t="t4">Nastavení</button></div>
 <div class="bar">
 <button id="bs" style="align-self:flex-end;margin:0">▶ Začít měření</button>
 <label>Zdroj dat<select id="src"><option value="sim">Simulace</option><option value="real">Skutečný senzor</option></select></label>
 <button id="bc" style="align-self:flex-end;margin:0">🔗 Připojit senzor</button>
-<label class="liveonly" hidden>Filtr pohybu<select id="mf"><option value="1">Zapnutý (GPS)</option><option value="0">Vypnutý</option></select></label>
-<label class="liveonly" hidden>Natočení telefonu vůči přídi (°)<input id="off" type="number" value="0"></label>
 <label class="simonly">Scénář<select id="mode"><option value="osc">Oscilující vítr</option><option value="shift">Trvalý posun</option><option value="stab">Stabilní vítr</option><option value="coup">Zesílení stáčí vítr doprava</option></select></label>
-<label>Jednotky<select id="unit"><option value="kn">uzly</option><option value="ms">m/s</option><option value="bft">Beaufort</option></select></label>
 <label>Okno grafů a statistik<select id="win"><option value="300">5 min</option><option value="600" selected>10 min</option><option value="1800">30 min</option></select></label>
 <label class="simonly">Zdržení na stanovišti<select id="dw"><option value="1200" selected>20 min (sledování cyklu)</option><option value="180">3 min (rychlý objezd)</option></select></label>
 <label>Teplota vzduchu (°C)<input id="temp" type="number" step="0.1" value="18.5"></label>
@@ -48,7 +45,7 @@ input[type=text],input[type=date]{background:var(--card);color:var(--fg);border:
 </div>
 <div id="rs" class="sub" hidden></div>
 <div class="grid" id="t1">
-<div class="card"><h2>Právě teď</h2><div class="live"><canvas id="cmp" width="190" height="190"></canvas>
+<div class="card"><h2>Právě teď</h2><div class="live" id="lv"><canvas id="cmp" width="190" height="190"></canvas>
 <div><div class="big" id="vs">–</div><div class="big" id="vd" style="margin-top:8px">–<small>°</small></div>
 <div style="margin-top:8px;font-weight:600" id="dev"></div></div></div></div>
 <div class="card"><h2>Rychlost větru</h2><div class="m" id="ms"></div></div>
@@ -81,6 +78,22 @@ input[type=text],input[type=date]{background:var(--card);color:var(--fg);border:
 <div class="card"><h2>Místa</h2><div id="pl"></div><div class="note" id="sn"></div></div>
 <div class="card wide"><h2>Uložená měření</h2><div style="overflow-x:auto"><table id="at"></table></div><button id="cb2">Zobrazit CSV vybraných měření</button> <button id="ds" style="background:var(--r)">Smazat simulovaná data</button><textarea id="csv2" hidden></textarea></div>
 </div>
+<div class="grid" id="t4" hidden><div id="st" style="display:contents">
+<div class="card"><h2>Zobrazení</h2><div class="bar" style="flex-direction:column"><label>Jednotky<select id="unit"><option value="kn">uzly</option><option value="ms">m/s</option><option value="bft">Beaufort</option></select></label></div></div>
+<div class="card"><h2>Kdy se sbírají data</h2><div class="bar" style="flex-direction:column">
+<label>Max. rychlost lodi pro měření (uz)<input id="thr" type="number" step="0.1" min="0.1" value="1"></label>
+<label>Doba ustálení po zastavení (s)<input id="stl" type="number" min="0" value="15"></label>
+<label>Max. nepřesnost GPS (m)<input id="acc" type="number" min="5" value="40"></label>
+<label>Min. počet vzorků na stanoviště<input id="mnn" type="number" min="5" value="30"></label>
+<label>Filtr pohybu<select id="mf"><option value="1">Zapnutý (GPS)</option><option value="0">Vypnutý</option></select></label></div>
+<div class="note">Měření se spustí, když rychlost lodi z GPS klesne pod zadanou hodnotu a uplyne doba ustálení. Platí pro skutečný senzor, simulace se řídí vlastním pohybem.</div></div>
+<div class="card"><h2>Senzor a kompas</h2><div class="bar" style="flex-direction:column">
+<label>Natočení telefonu vůči přídi (°)<input id="off" type="number" value="0"></label>
+<label>Korekce na pohyb lodi (GPS)<select id="mc"><option value="0">Vypnutá – zdánlivý vítr</option><option value="1">Zapnutá – přepočet na skutečný vítr</option></select></label></div>
+<div class="note">Natočení: o kolik stupňů po směru hodin je horní hrana telefonu natočená oproti přídi. Korekce odečte z naměřeného větru vektor pohybu lodi z GPS. Pomáhá jen při driftu a jen pokud GPS udává kurz, při stání je kurz z GPS nespolehlivý.</div></div>
+<div class="card"><h2>Teplota</h2><div class="bar" style="flex-direction:column"><label>Zdroj teploty<select id="tm"><option value="manual">Ručně (pole nahoře)</option><option value="auto">Z internetu (Open-Meteo)</option></select></label></div>
+<div class="note">Z internetu se bere aktuální teplota vzduchu z předpovědního modelu pro polohu měření (mřížka cca 1 až 11 km), ne skutečné měření na lodi. Vyžaduje připojení. Při chybě se použije ruční hodnota. Zdroj: open-meteo.com, bezplatné pro nekomerční použití.</div></div>
+</div></div>
 <div id="md" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px"><div class="card" style="max-width:380px;width:100%"><h2>Nové místo</h2><div id="mt" style="margin-bottom:10px;font-size:14px"></div><input id="mn" type="text" style="width:100%"><button id="mo">Uložit místo</button></div></div>
 <script>
 const $=id=>document.getElementById(id);
@@ -103,7 +116,7 @@ function sim(){T++;
  const sw=mode=='coup'?1.5*Math.sin(T/60):0;if(mode=='coup')d+=6*(sw+gust);
  let s=6+(mode=='osc'?1.2*Math.sin(T/76+1):0)+(mode=='shift'?T*.0005:0)+gust+sw+(Math.random()-.5)*.5;
  boat();d+=bx*.01;s=Math.max(0,s+by*.002);const t=simT0+T*1000;
- if(st=='stay'&&still>15){addSample(s,norm(d),t);buf.push({t,s,d:norm(d),x:bx,y:by})}else finish();
+ if(st=='stay'&&still>settle){addSample(s,norm(d),t);buf.push({t,s,d:norm(d),x:bx,y:by})}else finish();
  if(!(T%3))track.push([bx,by]);if(track.length>1500)track.shift()}
 function ma(a,n){return a.map((_,i)=>mean(a.slice(Math.max(0,i-n+1),i+1)))}
 function setup(c){const r=c.getBoundingClientRect(),k=devicePixelRatio||1;c.width=r.width*k;c.height=r.height*k;const x=c.getContext('2d');x.setTransform(k,0,0,k,0,0);return[x,r.width,r.height]}
@@ -230,13 +243,13 @@ function boat(){
  bsog=.2+Math.random()*.15;bx+=(Math.random()-.5)*.6;by+=(Math.random()-.5)*.6;still++;
  if(--dwell<=0){st='go';wi=(wi+1)%WP.length}}
 function finish(){
- if(buf.length>=30){const sp=buf.map(p=>p.s),di=buf.map(p=>p.d),g3=ma(sp,3),x=mean(buf.map(p=>p.x)),y=mean(buf.map(p=>p.y)),[lat,lon]=ll(x,y);
+ if(buf.length>=minN){const sp=buf.map(p=>p.s),di=buf.map(p=>p.d),g3=ma(sp,3),x=mean(buf.map(p=>p.x)),y=mean(buf.map(p=>p.y)),[lat,lon]=ll(x,y);
   const q={id:stations.length+1,t0:buf[0].t,t1:buf[buf.length-1].t,n:buf.length,x,y,lat,lon,temp:$('temp').value===''?null:+$('temp').value,vavg:mean(sp),vmed:median(sp),gust:Math.max(...g3),lull:Math.min(...g3),dmean:cmean(di),dmed:cmed(di),dstd:cstd(di)};stations.push(q);if(running)arch(q)}
  buf=[]}
 function ui(){
  us={kn:'uz',ms:'m/s',bft:'Bft'}[unit];
- const now=NOW(),[la,lo]=live&&!R.org?[NaN,NaN]:ll(bx,by),row=(a,b)=>'<span>'+a+'</span><span>'+b+'</span>',meas=st=='stay'&&still>15;
- $('gps').innerHTML=row('Datum a čas'+(live?'':' (simulace)'),ymd(now)+' '+hms(now))+row('Poloha (šířka, délka)',isNaN(la)?'–':la.toFixed(6)+'°, '+lo.toFixed(6)+'°')+row('Rychlost lodi (SOG)',(bsog*1.94384).toFixed(1)+' uz (práh 1,0 uz)')+row('Stav',meas?'Měřím stanoviště č. '+(stations.length+1)+' – '+buf.length+' vzorků':st=='stay'?'Ustaluji loď, čekám '+(16-still)+' s':'Přejezd – data se neukládají')+row('Uložených stanovišť',stations.length);
+ const now=NOW(),[la,lo]=live&&!R.org?[NaN,NaN]:ll(bx,by),row=(a,b)=>'<span>'+a+'</span><span>'+b+'</span>',meas=st=='stay'&&still>settle;
+ $('gps').innerHTML=row('Datum a čas'+(live?'':' (simulace)'),ymd(now)+' '+hms(now))+row('Poloha (šířka, délka)',isNaN(la)?'–':la.toFixed(6)+'°, '+lo.toFixed(6)+'°')+row('Rychlost lodi (SOG)',(bsog*1.94384).toFixed(1)+' uz (práh '+thrKn+' uz)')+row('Stav',meas?'Měřím stanoviště č. '+(stations.length+1)+' – '+buf.length+' vzorků':st=='stay'?'Ustaluji loď, čekám '+(settle+1-still)+' s':'Přejezd – data se neukládají')+row('Uložených stanovišť',stations.length);
  const rs=$('rs'),nw=Date.now();rs.hidden=!live;if(live)rs.textContent='Senzor: '+R.conn+(R.bat!=null?' ('+R.bat+' %)':'')+' · GPS: '+(nw-R.tG<5000?'OK, přesnost ±'+Math.round(R.acc)+' m':R.gm||'čekám na signál')+' · Kompas: '+(nw-R.tA<3000?'OK':'bez dat – směr je vůči přídi')+(R.conn=='připojeno'?' · Frekvence dat: rychlost '+hz(R.fs).toFixed(1)+' Hz, směr '+hz(R.fd).toFixed(1)+' Hz':'')+(meas?' · MĚŘÍM':'')+(R.dg&&R.conn!='připojeno'?'\n'+R.dg:'');
  if(!$('t2').hidden)drawMap();const key=stations.length+unit;if(key!=lastKey){lastKey=key;table();refreshArchive()}
  const bs=$('bs');bs.textContent=running?'■ Ukončit měření ('+mm(Math.max(0,(NOW()-runT0)/1000))+')':'▶ Začít měření';bs.style.background=running?'var(--r)':'var(--a)'}
@@ -319,14 +332,16 @@ function startGps(){
  if(!navigator.geolocation){R.gm='GPS nedostupné';return}
  R.gw=navigator.geolocation.watchPosition(p=>{const c=p.coords,t=Date.now();let sp=c.speed;
   if(sp==null&&R.pl){const dt=(t-R.pl[2])/1000;if(dt>0)sp=Math.hypot((c.longitude-R.pl[1])*111320*Math.cos(c.latitude*rad),(c.latitude-R.pl[0])*111320)/dt}
-  R.pl=[c.latitude,c.longitude,t];R.lat=c.latitude;R.lon=c.longitude;R.acc=c.accuracy;R.gsp=sp;R.tG=t;R.gm=''},e=>{R.gm='GPS chyba: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+  R.pl=[c.latitude,c.longitude,t];R.lat=c.latitude;R.lon=c.longitude;R.acc=c.accuracy;R.gsp=sp;R.cog=(c.heading==null||isNaN(c.heading))?null:c.heading;R.tG=t;R.gm=''},e=>{R.gm='GPS chyba: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
 function startCompass(){if(R.cp)return;R.cp=1;const f=e=>{if(e.alpha!=null&&(e.absolute||e.type=='deviceorientationabsolute')){R.al=e.alpha;R.tA=Date.now()}};addEventListener('deviceorientationabsolute',f,true);addEventListener('deviceorientation',f,true)}
 function realTick(){
  const n=Date.now(),fr=t=>n-t<4000;
  if(R.lat!=null&&fr(R.tG)){if(!R.org){LAT0=R.lat;LON0=R.lon;R.org=true}bx=(R.lon-LON0)*111320*Math.cos(R.lat*rad);by=(R.lat-LAT0)*111320;bsog=R.gsp==null?0:R.gsp;if(!(T++%3))track.push([bx,by]);if(track.length>1500)track.shift()}
- if($('mf').value=='0'||(fr(R.tG)&&R.gsp!=null&&R.gsp<.514&&R.acc<40)){still++;st='stay'}else{still=0;st='go'}
- const meas=st=='stay'&&still>15,ok=fr(R.tS)&&fr(R.tD),hd=fr(R.tA)?norm(360-R.al-(+$('off').value||0)):0;
- if(meas&&ok){miss=0;const d=norm(hd+R.rel);addSample(R.spd,d,n);buf.push({t:n,s:R.spd,d,x:bx,y:by})}
+ if($('mf').value=='0'||(fr(R.tG)&&R.gsp!=null&&R.gsp<thrKn*.5144&&R.acc<minAcc)){still++;st='stay'}else{still=0;st='go'}
+ const meas=st=='stay'&&still>settle,ok=fr(R.tS)&&fr(R.tD),hd=fr(R.tA)?norm(360-R.al-(+$('off').value||0)):0;
+ if(meas&&ok){miss=0;let d=norm(hd+R.rel),s=R.spd;
+  if($('mc').value=='1'&&R.cog!=null&&R.gsp!=null&&fr(R.tG)){const ve=-s*Math.sin(d*rad)+R.gsp*Math.sin(R.cog*rad),vn=-s*Math.cos(d*rad)+R.gsp*Math.cos(R.cog*rad);s=Math.hypot(ve,vn);d=norm(Math.atan2(-ve,-vn)/rad)}
+  addSample(s,d,n);buf.push({t:n,s,d,x:bx,y:by})}
  else if(!meas||++miss>10){finish();miss=0}}
 function setSrc(v){
  live=v=='real';running=false;document.querySelectorAll('.simonly').forEach(e=>e.hidden=live);document.querySelectorAll('.liveonly').forEach(e=>e.hidden=!live);
@@ -346,7 +361,8 @@ function askPlace(la,lo){
  $('mn').value='';$('mn').placeholder='např. Lipno – přístav';$('md').hidden=false;setTimeout(()=>$('mn').focus(),50);return o.pr}
 function placeOk(){const o=pend;if(!o)return;const pl={id:'p'+Date.now(),name:$('mn').value.trim()||'Místo '+(places.length+1),lat:o.lat,lon:o.lon};places.push(pl);saveA();pend=null;$('md').hidden=true;o.res(pl);refreshArchive()}
 function arch(q){const r={...q,uid:'r'+Date.now()+Math.random().toString(36).slice(2,6),sim:!live};delete r.x;delete r.y;delete r.id;
- askPlace(r.lat,r.lon).then(p=>{r.pid=p.id;archive.push(r);saveA();refreshArchive()})}
+ const go=()=>askPlace(r.lat,r.lon).then(p=>{r.pid=p.id;archive.push(r);saveA();refreshArchive()});
+ if(tmode=='auto')getTemp(r.lat,r.lon).then(t=>{if(t!=null){r.temp=t;r.ts='online';q.temp=t;lastKey=''}go()});else go()}
 function startMeas(){running=true;runT0=NOW();buf=[];if(!(live&&!R.org)){const[la,lo]=ll(bx,by);askPlace(la,lo)}}
 function stopMeas(){finish();running=false}
 const fv=id=>{const x=$(id).value;return x===''?null:+x};
@@ -359,8 +375,8 @@ function filt(){const d0=$('fd0').value,d1=$('fd1').value,pp=$('fp').value,a0=fv
 function refreshArchive(){
  if($('t3').hidden)return;
  const sel=$('fp'),cur=sel.value;sel.innerHTML='<option value="">Všechna místa</option>'+places.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('');sel.value=cur;
- const L=filt().sort((a,b)=>b.t0-a.t0),n=L.length,row=(a,b)=>'<span>'+a+'</span><span>'+b+'</span>',tp=L.filter(r=>r.temp!=null).map(r=>r.temp);
- $('as').innerHTML=n?row('Počet měření',n+' (z '+archive.length+')')+row('Celková doba',mm(sum(L.map(r=>(r.t1-r.t0)/1000)))+' min')+row('Ø rychlost',fmt(sum(L.map(r=>r.vavg*r.n))/sum(L.map(r=>r.n)))+' '+us)+row('Největší náraz',fmt(Math.max(...L.map(r=>r.gust)))+' '+us)+row('Směr (kruhový průměr)',Math.round(cmean(L.map(r=>r.dmed)))+'°')+row('Rozptyl směru (σ)',cstd(L.map(r=>r.dmed)).toFixed(1)+'°')+row('Ø teplota',tp.length?mean(tp).toFixed(1)+' °C':'–'):'Žádná měření neodpovídají filtrům.';
+ const act=['fd0','fd1','fp','fa0','fa1','fs0','fs1','ft0','ft1'].some(i=>$(i).value!=='')||!$('fsim').checked,L=(act?filt():archive.slice()).sort((a,b)=>b.t0-a.t0),n=L.length,row=(a,b)=>'<span>'+a+'</span><span>'+b+'</span>',tp=L.filter(r=>r.temp!=null).map(r=>r.temp);
+ $('as').innerHTML=n?row('Zobrazeno',act?n+' z '+archive.length+' (filtr aktivní)':'všechna měření ('+n+')')+row('Celková doba',mm(sum(L.map(r=>(r.t1-r.t0)/1000)))+' min')+row('Ø rychlost',fmt(sum(L.map(r=>r.vavg*r.n))/sum(L.map(r=>r.n)))+' '+us)+row('Největší náraz',fmt(Math.max(...L.map(r=>r.gust)))+' '+us)+row('Směr (kruhový průměr)',Math.round(cmean(L.map(r=>r.dmed)))+'°')+row('Rozptyl směru (σ)',cstd(L.map(r=>r.dmed)).toFixed(1)+'°')+row('Ø teplota',tp.length?mean(tp).toFixed(1)+' °C':'–'):'Žádná měření neodpovídají filtrům.';
  $('pl').innerHTML=places.length?places.map(p=>'<div class="plc"><input type="text" value="'+esc(p.name)+'" oninput="renPlace(\''+p.id+'\',this.value)"><span>'+archive.filter(r=>r.pid==p.id).length+' měření</span></div>').join(''):'Zatím žádné místo. Vznikne při prvním uloženém měření.';
  $('sn').textContent=storeOk?'Data se ukládají v tomto zařízení a prohlížeči. Při smazání dat prohlížeče zmizí, zálohujte je přes CSV.':'Ukládání do zařízení není v tomto prostředí dostupné – data zůstanou jen do zavření stránky. Exportujte CSV.';
  $('at').innerHTML=n?'<tr><th>Datum</th><th>Čas</th><th>Místo</th><th>Doba</th><th>Teplota °C</th><th>Ø ('+us+')</th><th>Náraz</th><th>Směr</th><th>σ</th><th></th></tr>'+L.map(r=>'<tr><td>'+ymd(r.t0)+'</td><td>'+hms(r.t0)+'</td><td>'+esc(plName(r.pid))+(r.sim?' <span class="tag" style="background:var(--mut)">sim</span>':'')+'</td><td>'+Math.round((r.t1-r.t0)/1000)+' s</td><td><input type="number" step="0.1" value="'+(r.temp==null?'':r.temp)+'" oninput="setTemp(\''+r.uid+'\',this.value)"></td><td>'+fmt(r.vavg)+'</td><td>'+fmt(r.gust)+'</td><td>'+Math.round(r.dmed)+'°</td><td>'+r.dstd.toFixed(1)+'°</td><td><button onclick="delRec(\''+r.uid+'\')" style="margin:0;padding:2px 8px;background:var(--r)">×</button></td></tr>').join(''):'<tr><td>Žádná data.</td></tr>'}
@@ -373,11 +389,19 @@ document.querySelectorAll('#flt input,#flt select').forEach(e=>{e.oninput=refres
 $('fr').onclick=()=>{document.querySelectorAll('#flt input,#flt select').forEach(e=>{if(e.type=='checkbox')e.checked=true;else e.value=''});refreshArchive()};
 $('ds').onclick=()=>{archive=archive.filter(r=>!r.sim);places=places.filter(p=>archive.some(r=>r.pid==p.id));saveA();refreshArchive()};
 $('cb2').onclick=async()=>{const c='datum;cas_od;cas_do;misto;lat;lon;doba_s;vzorku;teplota_C;rychlost_prum_ms;rychlost_prum_uz;naraz_ms;klid_ms;smer_median;smer_sigma;simulace\n'+filt().map(r=>[ymd(r.t0),hms(r.t0),hms(r.t1),plName(r.pid),r.lat.toFixed(6),r.lon.toFixed(6),Math.round((r.t1-r.t0)/1000),r.n,r.temp==null?'':r.temp,r.vavg.toFixed(2),(r.vavg*1.94384).toFixed(2),r.gust.toFixed(2),r.lull.toFixed(2),r.dmed.toFixed(0),r.dstd.toFixed(1),r.sim?1:0].join(';')).join('\n'),t=$('csv2');t.hidden=false;t.value=c;t.select();try{await navigator.clipboard.writeText(c);$('cb2').textContent='Zkopírováno ✓'}catch(e){$('cb2').textContent='Označeno – zkopírujte (Ctrl+C)'}};
+let thrKn=1,settle=15,minAcc=40,minN=30,tmode='manual';
+const SIDS=['unit','thr','stl','acc','mnn','tm','mf','off','mc','temp'],tcache={};
+function applyS(){unit=$('unit').value||'kn';thrKn=+$('thr').value||1;settle=Math.max(0,+$('stl').value||0);minAcc=+$('acc').value||40;minN=Math.max(5,+$('mnn').value||30);tmode=$('tm').value}
+function saveS(){try{const o={};SIDS.forEach(i=>o[i]=$(i).value);localStorage.setItem('vitr_s',JSON.stringify(o))}catch(e){}}
+async function getTemp(la,lo){const k=la.toFixed(1)+','+lo.toFixed(1),n=Date.now();if(tcache[k]&&n-tcache[k].t<900000)return tcache[k].v;
+ try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la.toFixed(4)+'&longitude='+lo.toFixed(4)+'&current=temperature_2m'),j=await r.json(),v=j.current.temperature_2m;if(typeof v=='number'){tcache[k]={t:n,v};return v}}catch(e){}return null}
+try{const o=JSON.parse(localStorage.getItem('vitr_s')||'{}');SIDS.forEach(i=>{if(o[i]!=null)$(i).value=o[i]})}catch(e){}
+applyS();SIDS.forEach(i=>{$(i).oninput=$(i).onchange=()=>{applyS();saveS();render()}});
 $('src').onchange=e=>setSrc(e.target.value);$('bc').onclick=()=>{if(!live){$('src').value='real';setSrc('real')}connect()};
 $('dw').onchange=e=>{DW=+e.target.value;reset()};
-document.querySelectorAll('.tab').forEach(bt=>bt.onclick=()=>{document.querySelectorAll('.tab').forEach(q=>q.classList.toggle('on',q==bt));['t1','t2','t3'].forEach(id=>$(id).hidden=id!=bt.dataset.t);render();refreshArchive()});
+document.querySelectorAll('.tab').forEach(bt=>bt.onclick=()=>{document.querySelectorAll('.tab').forEach(q=>q.classList.toggle('on',q==bt));['t1','t2','t3','t4'].forEach(id=>$(id).hidden=id!=bt.dataset.t);render();refreshArchive()});
 $('mode').onchange=e=>{mode=e.target.value;reset()};
-$('unit').onchange=e=>{unit=e.target.value;render()};
+
 $('win').onchange=e=>{win=+e.target.value;render()};
 $('spd').onchange=e=>{spd=+e.target.value};
 function prefill(){for(let i=0;i<1000;i++)sim();render()}
